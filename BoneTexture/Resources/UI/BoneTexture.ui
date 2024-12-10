@@ -15,8 +15,8 @@
   </property>
   <layout class="QVBoxLayout" name="verticalLayout_4">
    <item>
-    <widget class="ctkCollapsibleButton" name="InputDataCollapsibleButton" native="true">
-     <property name="text" stdset="0">
+    <widget class="ctkCollapsibleButton" name="InputDataCollapsibleButton">
+     <property name="text">
       <string>Input data</string>
      </property>
      <layout class="QVBoxLayout" name="InputDataVerticalLayout">
@@ -27,22 +27,22 @@
         </property>
         <layout class="QGridLayout" name="gridLayout">
          <item row="2" column="1">
-          <widget class="qMRMLNodeComboBox" name="InputSegmentationComboBox" native="true">
+          <widget class="qMRMLNodeComboBox" name="InputSegmentationComboBox">
            <property name="enabled">
             <bool>true</bool>
            </property>
-           <property name="nodeTypes" stdset="0">
+           <property name="nodeTypes">
             <stringlist>
              <string>vtkMRMLLabelMapVolumeNode</string>
             </stringlist>
            </property>
-           <property name="noneEnabled" stdset="0">
+           <property name="noneEnabled">
             <bool>false</bool>
            </property>
-           <property name="addEnabled" stdset="0">
+           <property name="addEnabled">
             <bool>false</bool>
            </property>
-           <property name="removeEnabled" stdset="0">
+           <property name="removeEnabled">
             <bool>false</bool>
            </property>
            <property name="SlicerParameterName" stdset="0">
@@ -51,31 +51,31 @@
           </widget>
          </item>
          <item row="0" column="1">
-          <widget class="qMRMLNodeComboBox" name="InputScanComboBox" native="true">
+          <widget class="qMRMLNodeComboBox" name="InputScanComboBox">
            <property name="enabled">
             <bool>true</bool>
            </property>
-           <property name="nodeTypes" stdset="0">
+           <property name="nodeTypes">
             <stringlist>
              <string>vtkMRMLScalarVolumeNode</string>
             </stringlist>
            </property>
-           <property name="hideChildNodeTypes" stdset="0">
+           <property name="hideChildNodeTypes">
             <stringlist>
              <string>vtkMRMLLabelMapVolumeNode</string>
              <string>vtkMRMLDiffusionWeightedVolumeNode</string>
             </stringlist>
            </property>
-           <property name="noneEnabled" stdset="0">
+           <property name="noneEnabled">
             <bool>false</bool>
            </property>
-           <property name="addEnabled" stdset="0">
+           <property name="addEnabled">
             <bool>false</bool>
            </property>
-           <property name="removeEnabled" stdset="0">
+           <property name="removeEnabled">
             <bool>false</bool>
            </property>
-           <property name="selectNodeUponCreation" stdset="0">
+           <property name="selectNodeUponCreation">
             <bool>true</bool>
            </property>
            <property name="SlicerParameterName" stdset="0">
@@ -133,8 +133,8 @@
     </widget>
    </item>
    <item>
-    <widget class="ctkCollapsibleButton" name="ComputationCollapsibleButton" native="true">
-     <property name="text" stdset="0">
+    <widget class="ctkCollapsibleButton" name="ComputationCollapsibleButton">
+     <property name="text">
       <string>Computation</string>
      </property>
      <layout class="QVBoxLayout" name="verticalLayout">
@@ -210,7 +210,7 @@
         <property name="checked">
          <bool>true</bool>
         </property>
-        <property name="collapsed" stdset="0">
+        <property name="collapsed">
          <bool>false</bool>
         </property>
         <layout class="QVBoxLayout" name="verticalLayout_9">
@@ -364,7 +364,7 @@
         <property name="checked">
          <bool>true</bool>
         </property>
-        <property name="collapsed" stdset="0">
+        <property name="collapsed">
          <bool>false</bool>
         </property>
         <layout class="QVBoxLayout" name="verticalLayout_7">
@@ -567,9 +567,9 @@
          <string>BM parameters</string>
         </property>
         <property name="checked">
-         <bool>false</bool>
+         <bool>true</bool>
         </property>
-        <property name="collapsed" stdset="0">
+        <property name="collapsed">
          <bool>false</bool>
         </property>
         <layout class="QVBoxLayout" name="verticalLayout_3">
@@ -644,11 +644,14 @@
     </widget>
    </item>
    <item>
-    <widget class="ctkCollapsibleButton" name="ResultsCollapsibleButton" native="true">
-     <property name="text" stdset="0">
+    <widget class="ctkCollapsibleButton" name="ResultsCollapsibleButton">
+     <property name="text">
       <string>Results</string>
      </property>
-     <property name="checked" stdset="0">
+     <property name="checked">
+      <bool>false</bool>
+     </property>
+     <property name="collapsed">
       <bool>true</bool>
      </property>
      <layout class="QGridLayout" name="gridLayout_2">
@@ -656,6 +659,9 @@
        <widget class="ctkCollapsibleGroupBox" name="DisplayColormapsCollapsibleGroupBox">
         <property name="title">
          <string>Display Colormaps</string>
+        </property>
+        <property name="collapsed">
+         <bool>true</bool>
         </property>
         <layout class="QFormLayout" name="formLayout_4">
          <item row="0" column="0">
@@ -666,22 +672,22 @@
           </widget>
          </item>
          <item row="0" column="1">
-          <widget class="qMRMLNodeComboBox" name="featureSetMRMLNodeComboBox" native="true">
+          <widget class="qMRMLNodeComboBox" name="featureSetMRMLNodeComboBox">
            <property name="enabled">
-            <bool>true</bool>
+            <bool>false</bool>
            </property>
-           <property name="nodeTypes" stdset="0">
+           <property name="nodeTypes">
             <stringlist>
              <string>vtkMRMLDiffusionWeightedVolumeNode</string>
             </stringlist>
            </property>
-           <property name="noneEnabled" stdset="0">
+           <property name="noneEnabled">
+            <bool>false</bool>
+           </property>
+           <property name="editEnabled">
             <bool>true</bool>
            </property>
-           <property name="editEnabled" stdset="0">
-            <bool>true</bool>
-           </property>
-           <property name="renameEnabled" stdset="0">
+           <property name="renameEnabled">
             <bool>true</bool>
            </property>
           </widget>
@@ -703,6 +709,9 @@
        <widget class="ctkCollapsibleGroupBox" name="CollapsibleGroupBox">
         <property name="title">
          <string>Feature Values</string>
+        </property>
+        <property name="collapsed">
+         <bool>true</bool>
         </property>
         <layout class="QVBoxLayout" name="verticalLayout_2">
          <item>
@@ -1062,8 +1071,8 @@
           </widget>
          </item>
          <item>
-          <widget class="ctkPathLineEdit" name="CSVPathLineEdit" native="true">
-           <property name="nameFilters" stdset="0">
+          <widget class="ctkPathLineEdit" name="CSVPathLineEdit">
+           <property name="nameFilters">
             <stringlist>
              <string>*.csv</string>
             </stringlist>
@@ -1159,6 +1168,22 @@
     <hint type="destinationlabel">
      <x>511</x>
      <y>85</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>BoneTexture</sender>
+   <signal>mrmlSceneChanged(vtkMRMLScene*)</signal>
+   <receiver>featureSetMRMLNodeComboBox</receiver>
+   <slot>setMRMLScene(vtkMRMLScene*)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>458</x>
+     <y>800</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>491</x>
+     <y>961</y>
     </hint>
    </hints>
   </connection>

@@ -23,7 +23,8 @@ import SegmentStatistics
 import math  # for ceil
 import VectorToScalarVolume # For extra widget, handling input vector/RGB images.
 
-from slicer import vtkMRMLScalarVolumeNode, vtkMRMLLabelMapVolumeNode
+from slicer import vtkMRMLScalarVolumeNode, vtkMRMLLabelMapVolumeNode, vtkMRMLDiffusionWeightedVolumeNode
+
 
 
 #
@@ -369,6 +370,9 @@ class BoneTextureWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
 
             BMCLINode = self.logic.computeBMFeatures()
             self.addObserver(BMCLINode, slicer.vtkMRMLCommandLineModuleNode().StatusModifiedEvent, self.onBMNodeModified)
+        
+        self.ui.ResultsCollapsibleButton.collapsed = False
+        self.ui.CollapsibleGroupBox.collapsed = False
 
     def onGLCMNodeModified(self, cliNode, event):
         if not cliNode.IsBusy():
@@ -424,30 +428,46 @@ class BoneTextureWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
         self.logic.computeColormaps(self.ui.GLCMFeaturesCheckBox.isChecked(),
                                     self.ui.GLRLMFeaturesCheckBox.isChecked(),
                                     self.ui.BMFeaturesCheckBox.isChecked())
+        
+        self.ui.ResultsCollapsibleButton.collapsed = False
+        self.ui.DisplayColormapsCollapsibleGroupBox.collapsed = False
 
         # ----------------- Results Collapsible Button ----------------------- #
 
     def onFeatureSetChanged(self, node):
 
-        self.featureComboBox.clear()
+        self.ui.featureComboBox.clear()
 
         if node is None:
             return
 
-        # Set the festureSet displayed in Slicer to the selected module
+        CFeatures = ["Energy", "Entropy",
+                          "Correlation", "Inverse Difference Moment",
+                          "Inertia", "Cluster Shade",
+                          "Cluster Prominence", "Haralick Correlation"]
+        RLFeatures = ["Short Run Emphasis", "Long Run Emphasis",
+                           "Grey Level Nonuniformity", "Run Length Non-uniformity",
+                           "Low Grey Level Run Emphasis", "High Grey Level Run Emphasis",
+                           "Short Run Low Grey Level Emphasis", "Short Run High Grey Level Emphasis",
+                           "Long Run Low Grey Level Emphasis", "Long Run High Grey Level Emphasis"]
+        BMFeatures = ["Bone volume density", "Trabecular thickness", 
+                        "Trabecular separation", "Trabecular number",
+                        "Bone surface density"]
+
+        # Set the selected feature names in the featureCombobox
+        if node.GetDisplayNode().GetInputImageData().GetNumberOfScalarComponents() == 8:
+            self.ui.featureComboBox.addItems(CFeatures)
+        elif node.GetDisplayNode().GetInputImageData().GetNumberOfScalarComponents() == 10:
+            self.ui.featureComboBox.addItems(RLFeatures)
+        elif node.GetDisplayNode().GetInputImageData().GetNumberOfScalarComponents() == 5:
+            self.ui.featureComboBox.addItems(BMFeatures)
+
+        # # Set the feature Set displayed in Slicer to the selected module
         selectionNode = slicer.app.applicationLogic().GetSelectionNode()
         selectionNode.SetReferenceActiveVolumeID(node.GetID())
         mode = slicer.vtkMRMLApplicationLogic.BackgroundLayer
         applicationLogic = slicer.app.applicationLogic()
         applicationLogic.PropagateVolumeSelection(mode, 0)
-
-        # Set the good feature names in the featureCombobox
-        if node.GetDisplayNode().GetInputImageData().GetNumberOfScalarComponents() == 8:
-            self.ui.featureComboBox.addItems(self.CFeatures)
-        elif node.GetDisplayNode().GetInputImageData().GetNumberOfScalarComponents() == 10:
-            self.ui.featureComboBox.addItems(self.RLFeatures)
-        elif node.GetDisplayNode().GetInputImageData().GetNumberOfScalarComponents() == 5:
-            self.ui.featureComboBox.addItems(self.BMFeatures)
 
     def onFeatureChanged(self, index):
         if self.ui.featureSetMRMLNodeComboBox.currentNode():
@@ -661,23 +681,25 @@ class BoneTextureLogic(ScriptedLoadableModuleLogic):
     def computeSingleColormap(self,
                               CLIname,
                               parameterPack,
-                              outputName):
+                              outputName) -> vtkMRMLDiffusionWeightedVolumeNode:
+        """ Returns the feature set node with rainbow colormap"""
         parameters = self.convertParameterPackToDict(parameterPack)
         parameters["inputVolume"] = self.getParameterNode().inputVolume
         parameters["inputMask"] = self.getParameterNode().inputSegmentation
-        volumeNode = slicer.vtkMRMLDiffusionWeightedVolumeNode()
+        volumeNode = vtkMRMLDiffusionWeightedVolumeNode()
         slicer.mrmlScene.AddNode(volumeNode)
         displayNode = slicer.vtkMRMLDiffusionWeightedVolumeDisplayNode()
         slicer.mrmlScene.AddNode(displayNode)
         colorNode = slicer.util.getNode('Rainbow')
         displayNode.SetAndObserveColorNodeID(colorNode.GetID())
         volumeNode.SetAndObserveDisplayNodeID(displayNode.GetID())
-        volumeNode.SetName(outputName)
+        volumeNode.SetName(slicer.mrmlScene.GenerateUniqueName(outputName))
         parameters["outputVolume"] = volumeNode
         slicer.cli.run(CLIname,
                        None,
                        parameters,
                        wait_for_completion=False)
+        return volumeNode
 
     def SaveTableAsCSV(self,
                        table,
