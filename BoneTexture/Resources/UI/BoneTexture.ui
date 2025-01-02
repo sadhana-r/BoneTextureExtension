@@ -671,27 +671,6 @@
            </property>
           </widget>
          </item>
-         <item row="0" column="1">
-          <widget class="qMRMLNodeComboBox" name="featureSetMRMLNodeComboBox">
-           <property name="enabled">
-            <bool>false</bool>
-           </property>
-           <property name="nodeTypes">
-            <stringlist>
-             <string>vtkMRMLDiffusionWeightedVolumeNode</string>
-            </stringlist>
-           </property>
-           <property name="noneEnabled">
-            <bool>false</bool>
-           </property>
-           <property name="editEnabled">
-            <bool>true</bool>
-           </property>
-           <property name="renameEnabled">
-            <bool>true</bool>
-           </property>
-          </widget>
-         </item>
          <item row="1" column="0">
           <widget class="QLabel" name="featureLabel">
            <property name="text">
@@ -701,6 +680,9 @@
          </item>
          <item row="1" column="1">
           <widget class="QComboBox" name="featureComboBox"/>
+         </item>
+         <item row="0" column="1">
+          <widget class="QComboBox" name="featureSetComboBox"/>
          </item>
         </layout>
        </widget>
@@ -1168,22 +1150,6 @@
     <hint type="destinationlabel">
      <x>511</x>
      <y>85</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>BoneTexture</sender>
-   <signal>mrmlSceneChanged(vtkMRMLScene*)</signal>
-   <receiver>featureSetMRMLNodeComboBox</receiver>
-   <slot>setMRMLScene(vtkMRMLScene*)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>458</x>
-     <y>800</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>491</x>
-     <y>961</y>
     </hint>
    </hints>
   </connection>
