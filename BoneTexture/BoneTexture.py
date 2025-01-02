@@ -137,9 +137,13 @@ class BoneTextureWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
         self._parameterNodeGuiTag = None
 
         # Convert to parameter Node
-        self.featuresBM = None
-        self.featuresGLCM = None
-        self.featuresGLRLM = None
+        self.computedFeatures = {'GLCMFeatures':None,
+                                 'GLRLMFeatures': None,
+                                 'BMFeatures': None
+                            }
+        # self.featuresBM = None
+        # self.featuresGLCM = None
+        # self.featuresGLRLM = None
 
     def setup(self) -> None:
         """Called when the user opens the module the first time and the widget is initialized."""
@@ -355,67 +359,57 @@ class BoneTextureWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
             slicer.util.warningDisplay("Please select at least one type of features to compute")
             return
         
-        # This will run async, and populate self.logic.featuresXXX
+        # This will run async, and populate self.logic.computedFeatures
         if self.ui.GLCMFeaturesCheckBox.isChecked():
-
-            GLCMCLINode = self.logic.computeGLCMFeatures()
-            self.addObserver(GLCMCLINode, slicer.vtkMRMLCommandLineModuleNode().StatusModifiedEvent, self.onGLCMNodeModified)
+            GLCMFeaturesNode = self.logic.computeSingleFeature(slicer.modules.computeglcmfeatures,
+                                       self.logic.getParameterNode().GLCMFeaturesValue,
+                                       "GLCMFeatures")
+            self.addObserver(GLCMFeaturesNode, slicer.vtkMRMLCommandLineModuleNode().StatusModifiedEvent, self.onFeatureSetNodeModified)
 
         if self.ui.GLRLMFeaturesCheckBox.isChecked():
-
-            GLRLMCLINode = self.logic.computeGLRLMFeatures()
-            self.addObserver(GLRLMCLINode, slicer.vtkMRMLCommandLineModuleNode().StatusModifiedEvent, self.onGLRLMNodeModified)
+            GLRLMFeaturesNode = self.logic.computeSingleFeature(slicer.modules.computeglrlmfeatures,
+                                       self.logic.getParameterNode().GLCMFeaturesValue,
+                                       "GLRLMFeatures")
+            self.addObserver(GLRLMFeaturesNode, slicer.vtkMRMLCommandLineModuleNode().StatusModifiedEvent, self.onFeatureSetNodeModified)
 
         if self.ui.BMFeaturesCheckBox.isChecked():
+            BMFeaturesNode = self.logic.computeSingleFeature(slicer.modules.computebmfeatures,
+                                       self.logic.getParameterNode().GLCMFeaturesValue,
+                                       "BMFeatures")
+            self.addObserver(BMFeaturesNode, slicer.vtkMRMLCommandLineModuleNode().StatusModifiedEvent, self.onFeatureSetNodeModified)
 
-            BMCLINode = self.logic.computeBMFeatures()
-            self.addObserver(BMCLINode, slicer.vtkMRMLCommandLineModuleNode().StatusModifiedEvent, self.onBMNodeModified)
-        
         self.ui.ResultsCollapsibleButton.collapsed = False
         self.ui.CollapsibleGroupBox.collapsed = False
 
-    def onGLCMNodeModified(self, cliNode, event):
-        if not cliNode.IsBusy():
-          self.removeObservers(self.onGLCMNodeModified)
-          logging.info('GLCM status: %s' % cliNode.GetStatusString())
-          if cliNode.GetStatusString() == 'Completed':
-            self.featuresGLCM = list(map(float, cliNode.GetParameterValue(2, 0).split(",")))
-            self.onDisplayFeatures()
-            # if self.interface is not None:
-            #     self.interface.onDisplayFeatures()
+    def onColorMapNodeModified(self, cliMapNode, event):
+        if not cliMapNode.IsBusy():
+          self.removeObservers(self.onColorMapNodeModified)
+          logging.info('%s Status: %s' % (cliMapNode.GetName(), cliMapNode.GetStatusString()))
+          if cliMapNode.GetStatusString() == 'Completed':
+              pass          
 
-    def onGLRLMNodeModified(self, cliNode, event):
+    def onFeatureSetNodeModified(self, cliNode, event):
         if not cliNode.IsBusy():
-          self.removeObservers(self.onGLRLMNodeModified)
-          logging.info('GLRLM status: %s' % cliNode.GetStatusString())
+          self.removeObserver(cliNode, slicer.vtkMRMLCommandLineModuleNode().StatusModifiedEvent, self.onFeatureSetNodeModified)
+          logging.info('%s status: %s' % (cliNode.GetName(),cliNode.GetStatusString()))
           if cliNode.GetStatusString() == 'Completed':
-            self.featuresGLRLM = list(map(float, cliNode.GetParameterValue(2, 0).split(",")))
-            self.onDisplayFeatures()
-            # if self.interface is not None:
-            #     self.interface.onDisplayFeatures()
-
-    def onBMNodeModified(self, cliNode, event):
-        if not cliNode.IsBusy():
-          self.removeObservers(self.onBMNodeModified)
-          logging.info('BM status: %s' % cliNode.GetStatusString())
-          if cliNode.GetStatusString() == 'Completed':
-            self.featuresBM = list(map(float, cliNode.GetParameterValue(2, 0).split(",")))
+            self.computedFeatures[cliNode.GetName()] = list(map(float, cliNode.GetParameterValue(2, 0).split(",")))
             self.onDisplayFeatures()
             # if self.interface is not None:
             #     self.interface.onDisplayFeatures()
 
     def onDisplayFeatures(self):
-        if self.featuresGLCM is not None:
+        if self.computedFeatures['GLCMFeatures'] is not None:
             for i in range(8):
-                self.ui.displayFeaturesTableWidget.item(i,1).setText(self.featuresGLCM[i])
+                self.ui.displayFeaturesTableWidget.item(i,1).setText(self.computedFeatures['GLCMFeatures'][i])
 
-        if self.featuresGLRLM is not None:
+        if self.computedFeatures['GLRLMFeatures'] is not None:
             for i in range(10):
-                self.ui.displayFeaturesTableWidget.item(i, 3).setText(self.featuresGLRLM[i])
+                self.ui.displayFeaturesTableWidget.item(i, 3).setText(self.computedFeatures['GLRLMFeatures'][i])
 
-        if self.featuresBM is not None:
+        if self.computedFeatures['BMFeatures'] is not None:
             for i in range(5):
-                self.ui.displayFeaturesTableWidget.item(i, 5).setText(self.featuresBM[i])
+                self.ui.displayFeaturesTableWidget.item(i, 5).setText(self.computedFeatures['BMFeatures'][i])
 
     def onComputeColormaps(self):
 
@@ -425,10 +419,24 @@ class BoneTextureWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
             slicer.util.warningDisplay("Please select at least one type of features to compute")
             return
     
-        self.logic.computeColormaps(self.ui.GLCMFeaturesCheckBox.isChecked(),
-                                    self.ui.GLRLMFeaturesCheckBox.isChecked(),
-                                    self.ui.BMFeaturesCheckBox.isChecked())
-        
+        if self.ui.GLCMFeaturesCheckBox.isChecked():
+            GLCMMapNode = self.logic.computeSingleColormap(slicer.modules.computeglcmfeaturemaps,
+                                       self.logic.getParameterNode().GLCMFeaturesValue,
+                                       "GLCM_ColorMaps")
+            self.addObserver(GLCMMapNode, slicer.vtkMRMLCommandLineModuleNode().StatusModifiedEvent, self.onColorMapNodeModified)
+
+        if self.ui.GLRLMFeaturesCheckBox.isChecked():
+            GLRLMMapNode = self.logic.computeSingleColormap(slicer.modules.computeglrlmfeaturemaps,
+                                       self.logic.getParameterNode().GLRLMFeaturesValue,
+                                       "GLRLM_ColorMaps")
+            self.addObserver(GLRLMMapNode, slicer.vtkMRMLCommandLineModuleNode().StatusModifiedEvent, self.onColorMapNodeModified)
+
+        if self.ui.BMFeaturesCheckBox.isChecked():
+            BMMapNode = self.logic.computeSingleColormap(slicer.modules.computebmfeaturemaps,
+                                       self.logic.getParameterNode().BMFeaturesValue,
+                                       "BM_ColorMaps")
+            self.addObserver(BMMapNode, slicer.vtkMRMLCommandLineModuleNode().StatusModifiedEvent, self.onColorMapNodeModified)
+
         self.ui.ResultsCollapsibleButton.collapsed = False
         self.ui.DisplayColormapsCollapsibleGroupBox.collapsed = False
 
@@ -437,7 +445,6 @@ class BoneTextureWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
     def onFeatureSetChanged(self, node):
 
         self.ui.featureComboBox.clear()
-
         if node is None:
             return
 
@@ -475,7 +482,7 @@ class BoneTextureWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
             self.ui.featureSetMRMLNodeComboBox.currentNode().GetDisplayNode().SetDiffusionComponent(index)
 
     def onSaveTable(self):
-        self.logic.SaveTableAsCSV(self.ui.displayFeaturesTableWidget,self.CSVPathLineEdit.currentPath)
+        self.logic.SaveTableAsCSV(self.ui.displayFeaturesTableWidget,self.ui.CSVPathLineEdit.currentPath)
 
     def cleanup(self):
         pass
@@ -608,80 +615,98 @@ class BoneTextureLogic(ScriptedLoadableModuleLogic):
 
         return feature_dict
     
-    def computeGLCMFeatures(self):
+    # def computeGLCMFeatures(self):
 
-            logging.info('Computing GLCM Features ...')
-            _module = slicer.modules.computeglcmfeatures
-            GLCMParameters = self.convertParameterPackToDict(self.getParameterNode().GLCMFeaturesValue)
-            GLCMParameters["inputVolume"] = self.getParameterNode().inputVolume
-            GLCMParameters["inputMask"] = self.getParameterNode().inputSegmentation
-            GLCMCLINode = slicer.cli.createNode(_module)
-            GLCMCLINode = slicer.cli.run(_module, node=GLCMCLINode, parameters=GLCMParameters, wait_for_completion=False)
+    #         logging.info('Computing GLCM Features ...')
+    #         _module = slicer.modules.computeglcmfeatures
+    #         GLCMParameters = self.convertParameterPackToDict(self.getParameterNode().GLCMFeaturesValue)
+    #         GLCMParameters["inputVolume"] = self.getParameterNode().inputVolume
+    #         GLCMParameters["inputMask"] = self.getParameterNode().inputSegmentation
+    #         GLCMNode = slicer.cli.createNode(_module)
+    #         GLCMNode.SetName('GLCMFeatures')
+    #         GLCMNode = slicer.cli.run(_module, node=GLCMNode, parameters=GLCMParameters, wait_for_completion=False)
 
-            return GLCMCLINode
+    #         return GLCMNode
 
-    def computeGLRLMFeatures(self):
-            logging.info('Computing GLRLM Features ...')
-            _module = slicer.modules.computeglrlmfeatures
-            GLRLMParameters = self.convertParameterPackToDict(self.getParameterNode().GLRLMFeaturesValue)
-            GLRLMParameters["inputVolume"] = self.getParameterNode().inputVolume
-            GLRLMParameters["inputMask"] = self.getParameterNode().inputSegmentation
-            GLRLMNode = slicer.cli.createNode(_module, GLRLMParameters)
-            GLRLMNode = slicer.cli.run(_module, node=GLRLMNode, parameters=GLRLMParameters, wait_for_completion=False)
+    # def computeGLRLMFeatures(self):
+    #         logging.info('Computing GLRLM Features ...')
+    #         _module = slicer.modules.computeglrlmfeatures
+    #         GLRLMParameters = self.convertParameterPackToDict(self.getParameterNode().GLRLMFeaturesValue)
+    #         GLRLMParameters["inputVolume"] = self.getParameterNode().inputVolume
+    #         GLRLMParameters["inputMask"] = self.getParameterNode().inputSegmentation
+    #         GLRLMNode = slicer.cli.createNode(_module, GLRLMParameters)
+    #         GLRLMNode.SetName('GLRLMFeatures')
+    #         GLRLMNode = slicer.cli.run(_module, node=GLRLMNode, parameters=GLRLMParameters, wait_for_completion=False)
             
-            return GLRLMNode
+    #         return GLRLMNode
     
-    def computeBMFeatures(self):
-        logging.info('Computing BM Features ...')
-        _module = slicer.modules.computebmfeatures
-        BMParameters = self.convertParameterPackToDict(self.getParameterNode().BMFeaturesValue)
-        BMParameters["inputVolume"] = self.getParameterNode().inputVolume
-        BMParameters["inputMask"] = self.getParameterNode().inputSegmentation
-        BMNode = slicer.cli.createNode(_module, BMParameters)
-        BMNode = slicer.cli.run(_module, node=BMNode, parameters=BMParameters, wait_for_completion=False)
-        return BMNode
+    # def computeBMFeatures(self):
+    #     logging.info('Computing BM Features ...')
+    #     _module = slicer.modules.computebmfeatures
+    #     BMParameters = self.convertParameterPackToDict(self.getParameterNode().BMFeaturesValue)
+    #     BMParameters["inputVolume"] = self.getParameterNode().inputVolume
+    #     BMParameters["inputMask"] = self.getParameterNode().inputSegmentation
+    #     BMNode = slicer.cli.createNode(_module, BMParameters)
+    #     BMNode.SetName('BMFeatures')
+    #     BMNode = slicer.cli.run(_module, node=BMNode, parameters=BMParameters, wait_for_completion=False)
+    #     return BMNode
 
+    # --------------- Computation of the wanted features --------------------- #
 
-    # def computeSingleFeatureSet(self,
-    #                            inputScan,
-    #                            inputSegmentation,
-    #                            CLIname,
-    #                            valueDict):
-    #     parameters = dict(valueDict)
-    #     parameters["inputVolume"] = inputScan
-    #     parameters["inputMask"] = inputSegmentation
-    #     CLI = slicer.cli.run(CLIname,
-    #                          None,
-    #                          parameters,
-    #                          wait_for_completion=True)
-    #     return list(map(float, CLI.GetParameterValue(2, 0).split(",")))
+    # def computeFeatures(self,
+    #                     computeGLCMFeatures,
+    #                     computeGLRLMFeatures,
+    #                     computeBMFeatures):
+        
+    #     if computeGLCMFeatures:
+    #         GLCMFeaturesNode = self.computeSingleFeature(slicer.modules.computeglcmfeatures,
+    #                                    self.getParameterNode().GLCMFeaturesValue,
+    #                                    "GLCMFeatures")
+    #     if computeGLRLMFeatures:
+    #         GLRLMFeaturesNode = self.computeSingleFeature(slicer.modules.computeglrlmfeatures,
+    #                                    self.getParameterNode().GLRLMFeaturesValue,
+    #                                    "GLRLMFeatures")
+    #     if computeBMFeatures:
+    #         BMFeaturesNode = self.computeSingleFeature(slicer.modules.computebmfeatures,
+    #                                    self.getParameterNode().BMFeaturesValue,
+    #                                    "BMFeatures")
 
+    def computeSingleFeature(self,
+                              CLIname,
+                              parameterPack,
+                              outputName):
+        logging.info('Computing %s Features ...' % outputName)
+        parameters = self.convertParameterPackToDict(parameterPack)
+        parameters["inputVolume"] = self.getParameterNode().inputVolume
+        parameters["inputMask"] = self.getParameterNode().inputSegmentation
+        run_node = slicer.cli.createNode(CLIname, parameters)
+        run_node.SetName(outputName)
+        run_node = slicer.cli.run(CLIname, node=run_node, parameters=parameters, wait_for_completion=False)
+        return run_node
+        
     # --------------- Computation of the wanted colormaps --------------------- #
 
-    def computeColormaps(self,
-                         computeGLCMFeatures,
-                         computeGLRLMFeatures,
-                         computeBMFeatures):
+    # def computeColormaps(self,
+    #                      computeGLCMFeatures: bool,
+    #                      computeGLRLMFeatures: bool,
+    #                      computeBMFeatures: bool):
 
-        if computeGLCMFeatures:
-            self.computeSingleColormap(slicer.modules.computeglcmfeaturemaps,
-                                       self.getParameterNode().GLCMFeaturesValue,
-                                       "GLCM_ColorMaps")
-
-        if computeGLRLMFeatures:
-            self.computeSingleColormap(slicer.modules.computeglrlmfeaturemaps,
-                                       self.getParameterNode().GLRLMFeaturesValue,
-                                       "GLRLM_ColorMaps")
-
-        if computeBMFeatures:
-            self.computeSingleColormap(slicer.modules.computebmfeaturemaps,
-                                       self.getParameterNode().BMFeaturesValue,
-                                       "BM_ColorMaps")
-
+    #     if computeGLCMFeatures:
+    #         GLCMMapNode = self.computeSingleColormap(slicer.modules.computeglcmfeaturemaps,
+    #                                    self.getParameterNode().GLCMFeaturesValue,
+    #                                    "GLCM_ColorMaps")
+    #     if computeGLRLMFeatures:
+    #         GLRLMMapNode = self.computeSingleColormap(slicer.modules.computeglrlmfeaturemaps,
+    #                                    self.getParameterNode().GLRLMFeaturesValue,
+    #                                    "GLRLM_ColorMaps")
+    #     if computeBMFeatures:
+    #         BMMapNode = self.computeSingleColormap(slicer.modules.computebmfeaturemaps,
+    #                                    self.getParameterNode().BMFeaturesValue,
+    #                                    "BM_ColorMaps")
     def computeSingleColormap(self,
                               CLIname,
                               parameterPack,
-                              outputName) -> vtkMRMLDiffusionWeightedVolumeNode:
+                              outputName):
         """ Returns the feature set node with rainbow colormap"""
         parameters = self.convertParameterPackToDict(parameterPack)
         parameters["inputVolume"] = self.getParameterNode().inputVolume
@@ -695,11 +720,13 @@ class BoneTextureLogic(ScriptedLoadableModuleLogic):
         volumeNode.SetAndObserveDisplayNodeID(displayNode.GetID())
         volumeNode.SetName(slicer.mrmlScene.GenerateUniqueName(outputName))
         parameters["outputVolume"] = volumeNode
+        run_node = slicer.cli.createNode(CLIname)
+        run_node.SetName(outputName)
         slicer.cli.run(CLIname,
                        None,
                        parameters,
                        wait_for_completion=False)
-        return volumeNode
+        return run_node
 
     def SaveTableAsCSV(self,
                        table,
