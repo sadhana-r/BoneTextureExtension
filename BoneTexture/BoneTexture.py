@@ -315,9 +315,7 @@ class BoneTextureWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
                                                               conversionMethod,
                                                               componentToExtract)
 
-        selectionNode = slicer.app.applicationLogic().GetSelectionNode()
-        selectionNode.SetReferenceActiveVolumeID(outputVolumeNode.GetID())
-        slicer.app.applicationLogic().PropagateVolumeSelection(0)
+        slicer.util.setSliceViewerLayers(background = outputVolumeNode.GetID() )
 
         # set the output as the new input for this module.
         self.ui.InputScanComboBox.setCurrentNode(outputVolumeNode)
@@ -474,11 +472,7 @@ class BoneTextureWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
             self.ui.featureComboBox.addItems(BMFeatures)
 
         # # Set the feature Set displayed in Slicer to the selected module
-        selectionNode = slicer.app.applicationLogic().GetSelectionNode()
-        selectionNode.SetReferenceActiveVolumeID(currentFeatureMapNode.GetID())
-        mode = slicer.vtkMRMLApplicationLogic.BackgroundLayer
-        applicationLogic = slicer.app.applicationLogic()
-        applicationLogic.PropagateVolumeSelection(mode, 0)
+        slicer.util.setSliceViewerLayers(background = currentFeatureMapNode.GetID())
 
     def onFeatureChanged(self, index):
         if self.ui.featureComboBox.currentText:
