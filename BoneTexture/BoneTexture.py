@@ -141,9 +141,8 @@ class BoneTextureWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
                                  'GLRLMFeatures': None,
                                  'BMFeatures': None
                             }
-        # self.featuresBM = None
-        # self.featuresGLCM = None
-        # self.featuresGLRLM = None
+        
+        self.serializerModeActive = False
 
     def setup(self) -> None:
         """Called when the user opens the module the first time and the widget is initialized."""
@@ -174,6 +173,11 @@ class BoneTextureWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
         self.addObserver(slicer.mrmlScene, slicer.mrmlScene.EndCloseEvent, self.onSceneEndClose)
 
         self.setMaskRelatedOptions(False)
+
+        self.ui.singleImagePushButton.clicked.connect(self.activateSingleImageMode)
+        self.ui.serializerPushButton.clicked.connect(self.activateSeralizerMode)
+        self.activateSingleImageMode()
+        self.ui.SerializerConvertToScalarCheckBox.stateChanged.connect(self.enableVectorToScalarComboBox)
 
         self.ui.defineMaskCheckBox.stateChanged.connect(self.defineMaskCheckStateChanged)
         self.ui.vectorToScalarVolumeMethodSelectorComboBox.currentIndexChanged.connect(self.updateVectorToScalarVolumeGUI)
@@ -252,6 +256,39 @@ class BoneTextureWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
             self.addObserver(self._parameterNode, vtk.vtkCommand.ModifiedEvent, self.onInputScanChanged)
             self.onInputScanChanged()
           
+    def setButtonColorSingleOrSerializerMode(self, isSerializerMode = False):
+        if isSerializerMode:
+            self.ui.singleImagePushButton.setStyleSheet('')
+            self.ui.serializerPushButton.setStyleSheet("background-color : rgb(169, 169, 169)")
+        else:
+            self.ui.singleImagePushButton.setStyleSheet("background-color : rgb(169, 169, 169)")
+            self.ui.serializerPushButton.setStyleSheet('')
+
+    def activateSingleImageMode(self,):
+        self.serializerModeActive = False
+        self.ui.inputDataStackedWidget.setCurrentIndex(0)
+        self.setButtonColorSingleOrSerializerMode(isSerializerMode = self.serializerModeActive)
+        self.ui.ExportCollapsibleButton.hide()
+        self.ui.ResultsCollapsibleButton.show()
+
+        # Convert vector to scalar options
+        self.ui.vectorToScalarVolumePushButton.show()
+        self.ui.SerializerConvertToScalarCheckBox.hide()
+        self.onInputScanChanged()
+    
+    def activateSeralizerMode(self):
+        self.serializerModeActive = True
+        self.ui.inputDataStackedWidget.setCurrentIndex(1)
+        self.setButtonColorSingleOrSerializerMode(isSerializerMode = self.serializerModeActive)
+        self.ui.ExportCollapsibleButton.show()
+        self.ui.ResultsCollapsibleButton.hide()
+
+        # Convert vector to scalar options
+        self.ui.vectorToScalarVolumePushButton.hide()
+        self.ui.SerializerConvertToScalarCheckBox.show()
+        # self.ui.vectorToScalarVolumeGroupBox.enabled = True
+        self.enableVectorToScalarComboBox()
+
     def setMaskRelatedOptions(self, bool = False):
         self.ui.InputSegmentationComboBox.enabled = bool
         self.ui.InputSegmentationLabel.enabled = bool
@@ -263,7 +300,7 @@ class BoneTextureWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
 
     def defineMaskCheckStateChanged(self):
         self.setMaskRelatedOptions(self.ui.defineMaskCheckBox.isChecked())
-        
+
     def setupVectorToScalarConversion(self):
         self.vectorToScalarVolumeConversionMethods = VectorToScalarVolume.ConversionMethods
         # Set up Method ComboBox options
@@ -281,6 +318,15 @@ class BoneTextureWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
             isMethodSingleComponent = conversionMethod is self.vectorToScalarVolumeConversionMethods.SINGLE_COMPONENT
             self.ui.SingleComponentSpinBox.visible = isMethodSingleComponent
 
+    def enableVectorToScalarComboBox(self, status = True):
+
+        if self.serializerModeActive:
+            self.ui.vectorToScalarVolumeGroupBox.enabled = True
+            self.ui.vectorToScalarVolumeMethodSelectorComboBox.enabled = self.ui.SerializerConvertToScalarCheckBox.isChecked()
+        else:
+            self.ui.vectorToScalarVolumeGroupBox.enabled = status
+            self.ui.vectorToScalarVolumeMethodSelectorComboBox.enabled = status
+
     def onInputScanChanged(self, caller = None, event = None) -> None:
         """ Check if input is vector image, and allow conversion enabling VectorToScalarVolume widget """
         if not self._parameterNode.inputVolume:
@@ -290,9 +336,9 @@ class BoneTextureWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
         inputScan = self._parameterNode.inputVolume
 
         if inputScan.IsTypeOf('vtkMRMLVectorVolumeNode'):
-            self.ui.vectorToScalarVolumeGroupBox.enabled = True
+            self.enableVectorToScalarComboBox(True)
         else:
-            self.ui.vectorToScalarVolumeGroupBox.enabled = False
+            self.enableVectorToScalarComboBox(False)
 
     def onVectorToScalarVolumePushButtonClicked(self):
         """
