@@ -213,6 +213,8 @@ class BoneTextureWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
         # ---------------- Computation Collapsible Button -------------------- #
         self.ui.ComputeFeaturesPushButton.clicked.connect(self.onComputeFeatures)
         self.ui.ComputeColormapsPushButton.clicked.connect(self.onComputeTextureMaps)
+        self.ui.ComputeTextureMapsProgressBar.visible = False
+        self.ui.ComputeFeaturesProgressBar.visible = False
 
         # ----------------- Results Collapsible Button ----------------------- #
 
@@ -291,8 +293,6 @@ class BoneTextureWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
         self.ui.ResultsCollapsibleButton.show()
         self.ui.inputsDisplayMessage.hide()
         self.ui.processInputsPushButton.hide()
-        # self.ui.ComputeTextureMapCLIProgressBar.hide()
-        # self.ui.ComputeTextureFeatureCLIProgressBar.hide()
 
         # Convert vector to scalar options
         self.ui.vectorToScalarVolumePushButton.show()
@@ -309,8 +309,6 @@ class BoneTextureWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
         self.ui.inputsDisplayMessage.show()
         self.ui.processInputsPushButton.show()
         self.setMaskRelatedOptions(True)
-        # self.ui.ComputeTextureMapCLIProgressBar.show()
-        # self.ui.ComputeTextureFeatureCLIProgressBar.show()
 
         # Convert vector to scalar options
         self.ui.vectorToScalarVolumePushButton.hide()
@@ -604,6 +602,18 @@ class BoneTextureWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
 
         output_csv = Path(self.ui.OutputFolderDirectoryPathLineEdit.currentPath)/"TextureFeaturesTable.csv"
         
+
+        stepsPerCase = sum((
+            self.ui.GLCMFeaturesCheckBox.isChecked(),
+            self.ui.GLRLMFeaturesCheckBox.isChecked(),
+            self.ui.BMFeaturesCheckBox.isChecked(),
+        ))
+
+        self.ui.ComputeFeaturesProgressBar.value = 0
+        self.ui.ComputeFeaturesProgressBar.minimum = 0 
+        self.ui.ComputeFeaturesProgressBar.maximum = len(inputData) * stepsPerCase
+        self.ui.ComputeFeaturesProgressBar.visible = True
+
         with open(output_csv, "w+") as file:
             print(file)
             cw = csv.writer(file, delimiter=',')
@@ -644,6 +654,7 @@ class BoneTextureWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
 
                 isValid = self.logic.inputDataVerification(inputScan, inputLabelMap)
                 if not isValid:
+                    self.ui.ComputeFeaturesProgressBar.visible = False
                     return
 
                 # This will run async, and populate self.logic.computedFeatures
@@ -653,6 +664,7 @@ class BoneTextureWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
                                             inputScan,
                                             parameters,
                                             "GLCMFeatures", inputLabelMap, wait_for_completion= True)
+                    self.ui.ComputeFeaturesProgressBar.value += 1
                     GLCMfeatures = [float(value) if value.replace('.','',1).isnumeric() else 'NaN' for value in GLCMFeaturesNode.GetParameterValue(2, 0).split(",")]                       
 
                 if self.ui.GLRLMFeaturesCheckBox.isChecked():
@@ -662,6 +674,7 @@ class BoneTextureWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
                                             parameters,
                                             "GLRLMFeatures", inputLabelMap, wait_for_completion=True)
                     self.GLRLMnode = GLRLMFeaturesNode
+                    self.ui.ComputeFeaturesProgressBar.value += 1
                     GLRLMfeatures = [float(value) if value.replace('.','',1).isnumeric() else 'NaN' for value in GLRLMFeaturesNode.GetParameterValue(2, 0).split(",")]   
       
                 if self.ui.BMFeaturesCheckBox.isChecked():
@@ -670,6 +683,7 @@ class BoneTextureWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
                                             inputScan,
                                             parameters,
                                             "BMFeatures", inputLabelMap, wait_for_completion=True)
+                    self.ui.ComputeFeaturesProgressBar.value += 1
                     BMfeatures = [float(value) if value.replace('.','',1).isnumeric() else 'NaN' for value in BMFeaturesNode.GetParameterValue(2, 0).split(",")]    
 
                 slicer.mrmlScene.RemoveNode(inputScan)
@@ -684,12 +698,18 @@ class BoneTextureWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
                 cw.writerow(toWrite)
 
                 file.flush()  
+                self.ui.ComputeFeaturesProgressBar.visible = False
             
     def onColorMapNodeModifiedSerializer(self, cliMapNode, event):
         if not cliMapNode.IsBusy():
             self.removeObserver(cliMapNode, slicer.vtkMRMLCommandLineModuleNode().StatusModifiedEvent, self.onColorMapNodeModified)
             logging.info('%s Status: %s' % (cliMapNode.GetName(), cliMapNode.GetStatusString()))
             if cliMapNode.GetStatusString() == 'Completed':
+                # Update progress bar
+                self.ui.ComputeTextureMapsProgressBar.value += 1
+                if self.ui.ComputeTextureMapsProgressBar.value == self.ui.ComputeTextureMapsProgressBar.maximum:
+                    self.ui.ComputeTextureMapsProgressBar.visible = False
+
                 outputDifussionWeightedVolumeNode = slicer.mrmlScene.GetNodeByID(cliMapNode.GetParameterValue(0,1))
                 outputDir = self.ui.OutputFolderDirectoryPathLineEdit.currentPath
                 self.exportVolumeToFile(outputDifussionWeightedVolumeNode, outputDir)
@@ -810,6 +830,17 @@ class BoneTextureWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
             slicer.util.errorDisplay("Please specify an output directory for saving results")
             return
         
+        stepsPerCase = sum((
+            self.ui.GLCMFeaturesCheckBox.isChecked(),
+            self.ui.GLRLMFeaturesCheckBox.isChecked(),
+            self.ui.BMFeaturesCheckBox.isChecked(),
+        ))
+
+        self.ui.ComputeTextureMapsProgressBar.value = 0
+        self.ui.ComputeTextureMapsProgressBar.minimum = 0 
+        self.ui.ComputeTextureMapsProgressBar.maximum = len(inputData) * stepsPerCase
+        self.ui.ComputeTextureMapsProgressBar.visible = True
+
         for input in inputData:
 
             inputScan, inputLabelMap = input
@@ -839,6 +870,7 @@ class BoneTextureWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
                     
             isValid = self.logic.inputDataVerification(inputScan, inputLabelMap)
             if not isValid:
+                self.ui.ComputeTextureMapsProgressBar.visible = False
                 return
 
             if self.ui.GLCMFeaturesCheckBox.isChecked():
