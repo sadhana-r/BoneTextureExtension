@@ -917,7 +917,7 @@ class BoneTextureWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
                                         inputScan,
                                         parameters,
                                         f"BMFeatureMaps_{case_id}",
-                                        inputLabelMap, wait_for_completion=True)
+                                        inputLabelMap, wait_for_completion=True)                            
                 self.onCLINodeCompletedSerializerMode(BMMapNode)
                
             slicer.mrmlScene.RemoveNode(inputScan) # inputScan
@@ -955,7 +955,8 @@ class BoneTextureWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
             return
 
     def onSaveTable(self):
-        self.logic.SaveTableAsCSV(self.ui.displayFeaturesTableWidget,self.ui.CSVPathLineEdit.currentPath)
+        output_csv_filepath = os.path.join(self.ui.CSVPathLineEdit.currentPath, self.ui.outputCSVFileName.text)
+        self.logic.SaveTableAsCSV(self.ui.displayFeaturesTableWidget,output_csv_filepath)
 
     def cleanup(self):
         pass
@@ -1132,7 +1133,7 @@ class BoneTextureLogic(ScriptedLoadableModuleLogic):
                        fileName):
         if fileName is None:
             slicer.util.warningDisplay("Please specify an output file")
-        if (not (fileName.endswith(".csv"))):
+        if not fileName.endswith(".csv"):
             slicer.util.warningDisplay("The output file must be a csv file")
         file = open(fileName, 'w')
         cw = csv.writer(file, delimiter=',')

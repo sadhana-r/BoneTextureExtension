@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>810</width>
-    <height>1613</height>
+    <height>1787</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -46,7 +46,7 @@
          <bool>true</bool>
         </property>
         <property name="currentIndex">
-         <number>0</number>
+         <number>1</number>
         </property>
         <widget class="QWidget" name="singleImageMode">
          <layout class="QFormLayout" name="formLayout_11">
@@ -189,20 +189,6 @@
                </property>
               </widget>
              </item>
-             <item>
-              <widget class="QPushButton" name="processInputsPushButton">
-               <property name="text">
-                <string>Process Inputs</string>
-               </property>
-              </widget>
-             </item>
-             <item>
-              <widget class="QLabel" name="inputsDisplayMessage">
-               <property name="text">
-                <string/>
-               </property>
-              </widget>
-             </item>
             </layout>
            </widget>
           </item>
@@ -244,6 +230,20 @@
           <widget class="QComboBox" name="vectorToScalarVolumeMethodSelectorComboBox"/>
          </item>
         </layout>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPushButton" name="processInputsPushButton">
+        <property name="text">
+         <string>Process Inputs</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QLabel" name="inputsDisplayMessage">
+        <property name="text">
+         <string/>
+        </property>
        </widget>
       </item>
      </layout>
@@ -819,10 +819,10 @@
       <string>Results</string>
      </property>
      <property name="checked">
-      <bool>false</bool>
+      <bool>true</bool>
      </property>
      <property name="collapsed">
-      <bool>true</bool>
+      <bool>false</bool>
      </property>
      <layout class="QGridLayout" name="gridLayout_2">
       <item row="0" column="0">
@@ -863,7 +863,7 @@
          <string>Feature Values</string>
         </property>
         <property name="collapsed">
-         <bool>true</bool>
+         <bool>false</bool>
         </property>
         <layout class="QVBoxLayout" name="verticalLayout_2">
          <item>
@@ -1223,13 +1223,37 @@
           </widget>
          </item>
          <item>
-          <widget class="ctkPathLineEdit" name="CSVPathLineEdit">
-           <property name="nameFilters">
-            <stringlist>
-             <string>*.csv</string>
-            </stringlist>
-           </property>
-          </widget>
+          <layout class="QFormLayout" name="formLayout_14">
+           <item row="2" column="0">
+            <widget class="QLabel" name="label_3">
+             <property name="text">
+              <string>Filename:</string>
+             </property>
+            </widget>
+           </item>
+           <item row="2" column="1">
+            <widget class="QLineEdit" name="outputCSVFileName"/>
+           </item>
+           <item row="5" column="0">
+            <widget class="QLabel" name="label_4">
+             <property name="text">
+              <string>Directory:</string>
+             </property>
+            </widget>
+           </item>
+           <item row="5" column="1">
+            <widget class="ctkPathLineEdit" name="CSVPathLineEdit">
+             <property name="filters">
+              <set>ctkPathLineEdit::Dirs|ctkPathLineEdit::Executable|ctkPathLineEdit::NoDot|ctkPathLineEdit::NoDotDot|ctkPathLineEdit::PermissionMask|ctkPathLineEdit::Readable|ctkPathLineEdit::Writable</set>
+             </property>
+             <property name="nameFilters">
+              <stringlist>
+               <string>*.csv</string>
+              </stringlist>
+             </property>
+            </widget>
+           </item>
+          </layout>
          </item>
          <item>
           <widget class="QPushButton" name="SaveTablePushButton">
